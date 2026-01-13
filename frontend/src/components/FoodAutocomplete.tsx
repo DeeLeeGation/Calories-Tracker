@@ -7,18 +7,16 @@ import type { Food } from "../lib/types";
 import { useDebouncedValue } from "../lib/useDebouncedValues";
 import AddFoodModal from "./AddFoodModal";
 
-
-
-
-
 type Props = {
   onAdd: (foodId: number, grams: number) => Promise<void> | void;
   disabled: boolean;
 };
- 
 
-
-
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "string") return err;
+  return "Suggest failed";
+}
 
 export default function FoodAutocomplete({ onAdd, disabled }: Props) {
   const [q, setQ] = useState("");
@@ -30,13 +28,14 @@ export default function FoodAutocomplete({ onAdd, disabled }: Props) {
   const [grams, setGrams] = useState("100");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
- 
 
   useEffect(() => {
     let cancelled = false;
 
     async function run() {
       const value = debounced.trim();
+
+      // если строка пустая — чистим список
       if (!value) {
         setSuggestions([]);
         setError(null);
@@ -45,13 +44,12 @@ export default function FoodAutocomplete({ onAdd, disabled }: Props) {
 
       setIsLoading(true);
       setError(null);
+
       try {
         const items = await api.suggestFoods(value);
-        console.log("suggest query:", value, "items:", items);
-    
         if (!cancelled) setSuggestions(items);
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message ?? "Suggest failed");
+      } catch (err: unknown) {
+        if (!cancelled) setError(getErrorMessage(err));
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -108,7 +106,12 @@ export default function FoodAutocomplete({ onAdd, disabled }: Props) {
             disabled={disabled}
           />
 
-          <Box mt="2" borderWidth={suggestions.length > 0 ? "1px" : "0"} borderRadius="md" overflow="hidden">
+          <Box
+            mt="2"
+            borderWidth={suggestions.length > 0 ? "1px" : "0"}
+            borderRadius="md"
+            overflow="hidden"
+          >
             {isLoading && (
               <Box p="2">
                 <Text opacity={0.7}>Loading…</Text>
@@ -159,7 +162,11 @@ export default function FoodAutocomplete({ onAdd, disabled }: Props) {
           />
           <Text opacity={0.75}>Preview: {kcalPreview} kcal</Text>
           <Box flex="1" />
-          <Button onClick={handleAdd} disabled={disabled || !selected} colorPalette="blue">
+          <Button
+            onClick={handleAdd}
+            disabled={disabled || !selected}
+            colorPalette="blue"
+          >
             Add
           </Button>
         </HStack>

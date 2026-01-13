@@ -1,4 +1,5 @@
 "use client";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Box, Container, Heading, Text, VStack } from "@chakra-ui/react";
 import EmptyCards from "../components/EmptyCards";
@@ -7,9 +8,12 @@ import DayLog from "../components/DayLog";
 import { api } from "../lib/api";
 import { todayISO } from "../lib/date";
 import type { DaySummary, LogEntry } from "../lib/types";
-import AddFoodModal from "../components/AddFoodModal";
 
-
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "string") return err;
+  return "API failed";
+}
 
 export default function HomePage() {
   const [date] = useState(() => todayISO());
@@ -25,8 +29,8 @@ export default function HomePage() {
       const [log, sum] = await Promise.all([api.listLog(date), api.daySummary(date)]);
       setEntries(log);
       setSummary(sum);
-    } catch (e: any) {
-      setTopError(e?.message ?? "API failed");
+    } catch (err: unknown) {
+      setTopError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -71,7 +75,9 @@ export default function HomePage() {
         </Box>
 
         <EmptyCards />
+
         <FoodAutocomplete onAdd={onAdd} disabled={loading} />
+
         <DayLog entries={entries} onDelete={onDelete} loading={loading} />
       </VStack>
     </Container>

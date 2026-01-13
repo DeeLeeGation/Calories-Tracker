@@ -27,7 +27,17 @@ function toIntOrNull(v: string): number | null {
   return x < 0 ? null : x;
 }
 
-export default function AddFoodModal({ onCreated, disabled }: Props) {
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "string") return err;
+  return "Failed to create food";
+}
+
+export default function AddFoodModal({
+  onCreated,
+  disabled,
+  triggerLabel,
+}: Props) {
   const [open, setOpen] = useState(false);
 
   const [name, setName] = useState("");
@@ -50,14 +60,16 @@ export default function AddFoodModal({ onCreated, disabled }: Props) {
   async function handleSave() {
     setError(null);
 
+    const trimmedName = name.trim();
     const kcalNum = toIntOrNull(kcal);
-    if (!name.trim() || kcalNum === null) {
+
+    if (!trimmedName || kcalNum === null) {
       setError("Name and kcal/100g are required");
       return;
     }
 
     const payload = {
-      name: name.trim(),
+      name: trimmedName,
       kcal_per_100g: kcalNum,
       protein_per_100g: advanced ? toIntOrNull(p) : null,
       fat_per_100g: advanced ? toIntOrNull(f) : null,
@@ -76,8 +88,8 @@ export default function AddFoodModal({ onCreated, disabled }: Props) {
       setP("");
       setF("");
       setC("");
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to create food");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -87,7 +99,7 @@ export default function AddFoodModal({ onCreated, disabled }: Props) {
     <Dialog.Root open={open} onOpenChange={(e) => setOpen(e.open)}>
       <Dialog.Trigger asChild>
         <Button variant="outline" disabled={disabled}>
-          Add custiom food
+          {triggerLabel ?? "Add custom food"}
         </Button>
       </Dialog.Trigger>
 
@@ -106,6 +118,7 @@ export default function AddFoodModal({ onCreated, disabled }: Props) {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Protein bar X"
+                  disabled={saving}
                 />
               </Field.Root>
 
@@ -116,29 +129,50 @@ export default function AddFoodModal({ onCreated, disabled }: Props) {
                   onChange={(e) => setKcal(e.target.value)}
                   placeholder="e.g. 320"
                   inputMode="numeric"
+                  disabled={saving}
                 />
               </Field.Root>
 
               <Checkbox.Root
                 checked={advanced}
                 onCheckedChange={(e) => setAdvanced(!!e.checked)}
+                disabled={saving}
               >
                 <Checkbox.Control />
                 <Checkbox.Label>I know macros (optional)</Checkbox.Label>
               </Checkbox.Root>
+
               {advanced && (
                 <HStack gap="3">
                   <Field.Root>
                     <Field.Label>Protein</Field.Label>
-                    <Input value={p} onChange={(e) => setP(e.target.value)} placeholder="g/100g" inputMode="numeric" />
+                    <Input
+                      value={p}
+                      onChange={(e) => setP(e.target.value)}
+                      placeholder="g/100g"
+                      inputMode="numeric"
+                      disabled={saving}
+                    />
                   </Field.Root>
                   <Field.Root>
                     <Field.Label>Fat</Field.Label>
-                    <Input value={f} onChange={(e) => setF(e.target.value)} placeholder="g/100g" inputMode="numeric" />
+                    <Input
+                      value={f}
+                      onChange={(e) => setF(e.target.value)}
+                      placeholder="g/100g"
+                      inputMode="numeric"
+                      disabled={saving}
+                    />
                   </Field.Root>
                   <Field.Root>
                     <Field.Label>Carbs</Field.Label>
-                    <Input value={c} onChange={(e) => setC(e.target.value)} placeholder="g/100g" inputMode="numeric" />
+                    <Input
+                      value={c}
+                      onChange={(e) => setC(e.target.value)}
+                      placeholder="g/100g"
+                      inputMode="numeric"
+                      disabled={saving}
+                    />
                   </Field.Root>
                 </HStack>
               )}
@@ -155,7 +189,7 @@ export default function AddFoodModal({ onCreated, disabled }: Props) {
 
           <Dialog.Footer>
             <HStack gap="3" w="full" justify="flex-end">
-              <Button variant="ghost" onClick={() => setOpen(false)}>
+              <Button variant="ghost" onClick={() => setOpen(false)} disabled={saving}>
                 Cancel
               </Button>
               <Button
