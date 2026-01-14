@@ -15,15 +15,15 @@ DB: SQLite
 ### Backend
 cd backend
 python -m venv .venv
-## Windows: .venv\Scripts\activate
+.venv\Scripts\activate
+python -m pip install --upgrade pip
 pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+python -m uvicorn main:app --reload --port 8000
 
 ### Frontend
 cd frontend
 npm install
-# create frontend/.env.local with:
-# NEXT_PUBLIC_CAL_API_BASE=http://localhost:8000
+cp .env.example .env.local
 npm run dev
 
 Open http://localhost:3000
